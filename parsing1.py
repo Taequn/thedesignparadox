@@ -2,13 +2,12 @@ import googlemaps
 from datetime import datetime
 import pandas as pd
 from googlesearch import search
-import facebook
 import requests
 import bs4 as bs
 import undetected_chromedriver as uc
 import time
 
-# gmaps = googlemaps.Client(key='AIzaSyBsJynpHqP7LNisTDgn_J0rd3GkWiBUDbM')
+# gmaps = googlemaps.Client(key='')
 # #find pizza places in New york
 # pizza_places = gmaps.places('cooking class', location='New York City')
 # #iterate through the results
