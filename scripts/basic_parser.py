@@ -8,8 +8,8 @@ from scrapingbee import ScrapingBeeClient
 import json
 
 class BasicParser:
-    def __init__(self, niche, location, rating_limit):
-        self.__check_values(niche, location, rating_limit)
+    def __init__(self, niche, location, rating_limit, rating_min):
+        self.__check_values(niche, location, rating_limit, rating_min)
 
         self.df = pd.DataFrame()
         #read api_keys
@@ -17,8 +17,9 @@ class BasicParser:
         self.niche = niche
         self.location = location
         self.rating_limit = int(rating_limit)
+        self.rating_min = int(rating_min)
 
-        self.scraper_wait_time = "10000"
+        self.scraper_wait_time = "5000"
 
         #### API KEYS ####
         with open('config/api_keys.json') as json_file:
@@ -35,13 +36,17 @@ class BasicParser:
     '''
 
     #check if all values are valid
-    def __check_values(self, niche, location, rating_limit):
+    def __check_values(self, niche, location, rating_limit, rating_min):
         if niche is None:
             raise ValueError("Niche is None")
         if location is None:
             raise ValueError("Location is None")
         if rating_limit is None:
             raise ValueError("Rating limit is None")
+        if rating_min is None:
+            raise ValueError("Rating min is None")
+        if rating_limit < rating_min:
+            raise ValueError("Rating limit is less than rating min")
 
         return True
 
@@ -73,7 +78,7 @@ class BasicParser:
     def get_dataframe(self):
         return self.df
 
-    def get_places(self):
+    def get_places(self, attempts=0):
         print("############################################")
         print("Beginning parsing places")
         gmaps = googlemaps.Client(key=self.gmaps_api)
@@ -89,20 +94,26 @@ class BasicParser:
 
         df = df.drop_duplicates(subset=['name']) #remove duplicates by name
         df = df[df['user_ratings_total'] <= self.rating_limit] #remove places with higher rating than the limit
+        df = df[df['user_ratings_total'] >= self.rating_min] #remove places with lower rating than the min
         df = df.reset_index(drop=True) #reset index after appending
 
         print("Found " + str(len(df)) + " places")
         if(len(df) == 0):
-            raise Exception("Did not find any places: try again!")
+            if(attempts < 3):
+                print("Error getting places: trying again")
+                return self.get_places(attempts=attempts+1)
+            else:
+                raise Exception("Did not find any places: try again! Google API issue!")
+
         print("############################################")
         self.df = df
 
-    def get_places_nearby(self, radius=1000):
+    def get_places_nearby(self, radius=1000, attempts=0):
         print("############################################")
         print("Beginning parsing places")
         gmaps = googlemaps.Client(key=self.gmaps_api)
         place = gmaps.geocode(self.location)
-        time.sleep(2)
+        time.sleep(4)
         lat = place[0]['geometry']['location']['lat']
         lng = place[0]['geometry']['location']['lng']
 
@@ -122,9 +133,15 @@ class BasicParser:
 
         df = df.drop_duplicates(subset=['name']) #remove duplicates by name
         df = df[df['user_ratings_total'] <= self.rating_limit] #remove places with higher rating than the limit
+        df = df[df['user_ratings_total'] >= self.rating_min] #remove places with lower rating than the min
         df = df.reset_index(drop=True) #reset index after appending
         if(len(df) == 0):
-            raise Exception("Did not find any places: try again! (probably Google API fucked up)")
+            if(attempts < 3):
+                print("Error getting places: trying again")
+                return self.get_places_nearby(radius=radius, attempts=attempts+1)
+            else:
+                raise Exception("Did not find any places: try again! Google API issue!")
+
 
         print("Found " + str(len(df)) + " places")
         print("############################################")
@@ -226,11 +243,6 @@ class BasicParser:
             raise Exception("Could not save dataframe")
 
 if __name__ == "__main__":
-    # inquiry = ask_the_user()
-    # niche = inquiry[0]
-    # location = inquiry[1]
-    # rating_limit = inquiry[2]
-
     parse = BasicParser("Cooking classes", "New York City", 100)
     parse.get_places_nearby(5000)
     parse.get_facebook_page()

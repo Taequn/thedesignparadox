@@ -7,6 +7,7 @@ class MainMenu:
         self.niche = None
         self.location = None
         self.rating_limit = None
+        self.rating_min = None
         self.radius = None
         self.type = None
 
@@ -28,9 +29,21 @@ class MainMenu:
                 print("Invalid input")
                 continue
 
+        integer = False
+        while not integer:
+            rating_min = input("Enter a rating minimum (integer): ")
+            try:
+                rating_min = int(rating_limit)
+                integer = True
+            except Exception as e:
+                print(e)
+                print("Invalid input")
+                continue
+
         self.niche = niche
         self.location = location
         self.rating_limit = rating_limit
+        self.rating_min = rating_min
 
     def set_type(self):
         confirmed = False
@@ -76,6 +89,7 @@ class MainMenu:
             print("Niche: " + self.niche)
             print("Location: " + self.location)
             print("Rating limit: " + str(self.rating_limit))
+            print("Rating minimum: " + str(self.rating_min))
             if self.type == "wide":
                 print("Type: Wider search with no radius limit")
             elif self.type == "radius":
@@ -94,7 +108,7 @@ class MainMenu:
 
     def run(self):
         self.set_variables()
-        parser = BasicParser(self.niche, self.location, self.rating_limit)
+        parser = BasicParser(self.niche, self.location, self.rating_limit, self.rating_min)
         if self.type == "wide":
             parser.get_places()
         else:
@@ -114,8 +128,8 @@ class MainMenu:
 
 
 #To-do:
-#1) Upload to google sheets and google drive
-#2) Make basic UI
+#1) Load dataframe from Google Drive
+#2) Change parser to use Google Custom Search API
 
 if __name__ == "__main__":
     menu = MainMenu()
