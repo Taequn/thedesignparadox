@@ -1,6 +1,8 @@
 from scripts.basic_parser import BasicParser
 from scripts.drive_upload import GoogleDriveUploader
+from scripts.website_parse import WebsiteAnalysis
 import datetime
+import pandas as pd
 
 class MainMenu:
     def __init__(self):
@@ -10,7 +12,68 @@ class MainMenu:
         self.rating_min = None
         self.radius = None
         self.type = None
+        self.type = -1
 
+
+        #SPYFU
+        self.filename = None
+
+    def set_parser(self):
+        print("#############################################")
+        print("# Welcome to The Design Paradox App! #")
+        print("#############################################")
+
+        print("Choose a parser:")
+        print("1. Basic Google Maps Parser")
+        print("2. SpyFu Parser")
+        confirmed = False
+        while not confirmed:
+            choice = input("Enter your choice (1 or 2): ")
+
+            try:
+                choice = int(choice)
+                if choice == 1 or choice == 2:
+                    confirmed = True
+                    self.type = choice
+                else:
+                    print("Invalid choice")
+                    continue
+            except Exception as e:
+                print(e)
+                print("Try again!")
+                continue
+
+    '''
+    ##############################################
+    # SPYFU PARSER METHODS #
+    ##############################################
+    '''
+    #Set the name of the file to be uploaded to Google Drive
+    def set_spyfu_variables(self):
+        print("#############################################")
+        print("# Welcome to The SpyFu Parser! #")
+        print("#############################################")
+
+        confirmed = False
+        while not confirmed:
+            print("Enter the file you want to analyze:")
+            filename = input("Enter a filename: ")
+            if filename == "":
+                print("Invalid filename")
+                continue
+            if not filename.endswith(".csv"):
+                filename += ".csv"
+
+            self.filename = filename
+            confirmed = True
+
+        self.location = self.filename.split(" — ")[1]
+
+    '''
+    ##############################################
+    # BASIC GOOGLE MAPS PARSER METHODS #
+    ##############################################
+    '''
     def set_search(self):
         print("Enter the niche you want to search for:")
         niche = input("Enter a niche: ")
@@ -77,7 +140,7 @@ class MainMenu:
 
     def set_variables(self):
         print("#############################################")
-        print("# Welcome to The Design Paradox Parser! #")
+        print("# Welcome to The Basic Google Maps Parser! #")
         print("#############################################")
 
         confirmed = False
@@ -106,7 +169,13 @@ class MainMenu:
                 print("Invalid choice. Starting over...")
                 continue
 
-    def run(self):
+
+    '''
+    ##############################################
+    # RUN FUNCTIONS #
+    ##############################################
+    '''
+    def run_maps_parser(self):
         self.set_variables()
         parser = BasicParser(self.niche, self.location, self.rating_limit, self.rating_min)
         if self.type == "wide":
@@ -123,17 +192,26 @@ class MainMenu:
                    + str(self.rating_limit) + " — " + self.type + ".csv"
         uploader.upload_file("output/output.csv", filename, "10rZTP5jXSyOCIllT_6hxqGTTVCvcWXy3")
 
+    def run_spyfu_parser(self):
+        self.set_spyfu_variables()
+        uploader = GoogleDriveUploader()
+        #def download_file(file_name, folder, download_name):
+        uploader.download_file(self.filename, "10rZTP5jXSyOCIllT_6hxqGTTVCvcWXy3", "output_spyfu.csv")
 
+        parser = WebsiteAnalysis('output_spyfu.csv', self.location)
+        parser.get_traffic_analysis()
+        parser.save_dataframe("output_spyfu")
 
-
+        uploader.upload_file("output/output_spyfu.csv", self.filename, "10rZTP5jXSyOCIllT_6hxqGTTVCvcWXy3")
 
 #To-do:
-#1) Load dataframe from Google Drive
-#2) Change parser to use Google Custom Search API
+#1) Prompt replace
+#2) Replace current search with website_parse method
 
 if __name__ == "__main__":
     menu = MainMenu()
-    menu.run()
+    menu.run_spyfu_parser()
+
 
 
 

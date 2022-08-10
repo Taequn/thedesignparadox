@@ -4,12 +4,12 @@ from googleapiclient.discovery import build
 import pandas as pd
 
 class WebsiteAnalysis():
-    def __init__(self, df, location):
-        self.df = df
+    def __init__(self, filename, location):
+        self.df = self.__read_pd(filename)
         self.location = location
         self.wait_time = 2
 
-        with open('../config/api_keys.json') as json_file:
+        with open('config/api_keys.json') as json_file:
             data = json.load(json_file)
             self.api = data['spyfu_api']
             self.key = data['spyfu_key']
@@ -21,6 +21,10 @@ class WebsiteAnalysis():
     # HELPER METHODS
     ###################################
     '''
+    def __read_pd(self, filename):
+        path = 'output/' + filename
+        return pd.read_csv(path)
+
     def __google_search(self, search_term, api_key, cse_id, **kwargs):
         service = build("customsearch", "v1", developerKey=api_key)
         res = service.cse().list(q=search_term, cx=cse_id, **kwargs).execute()
@@ -42,6 +46,14 @@ class WebsiteAnalysis():
         df["top5keywords"] = ""
 
         for i in range(len(df)):
+            #if the line is empty
+            try:
+                if df.at[i, "name"]=="" or len(df.at[i, "name"])<5:
+                    continue
+            except Exception as e:
+                print(e)
+                continue
+
             name = df.at[i, "name"]
             print("######" + str(i) + " / " + str(len(df)) + "######")
             print("Working on SEO analysis for " + df.at[i, "name"])
@@ -97,9 +109,9 @@ class WebsiteAnalysis():
     ###################################
     '''
 
-    def save_dataframe(self):
-        self.df.to_csv("../output/output_SEO.csv", index=False)
-        print("Dataframe saved to output/output.csv")
+    def save_dataframe(self, filename):
+        path = 'output/' + filename + '.csv'
+        self.df.to_csv(path, index=False)
 
 
 if __name__ == "__main__":

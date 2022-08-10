@@ -6,8 +6,7 @@
 .idea/inspectionProfiles/Project_Default.xml
 .idea/inspectionProfiles/profiles_settings.xml
 .DS_Store
-config/mycreds.txt
-config/api_keys.json
-scripts/__pycache__/__init__.cpython-37.pyc
+*.txt
 *.pyc
-scripts/client_secrets.json
+*.json
+*.yaml
