@@ -15,6 +15,10 @@ class WebsiteAnalysis():
             self.key = data['spyfu_key']
             self.g_api = data['g_api']
             self.cse = data['cse_api']
+            self.snov_api = data['snov_api']
+            self.snov_secret = data['snov_secret']
+
+        self.snov_token = self.__snov_auth()
 
     '''
     ###################################
@@ -30,6 +34,19 @@ class WebsiteAnalysis():
         res = service.cse().list(q=search_term, cx=cse_id, **kwargs).execute()
         return res
 
+    def __snov_auth(self):
+        params = {
+            'grant_type':'client_credentials',
+            'client_id': self.snov_api,
+            'client_secret': self.snov_api
+        }
+
+        res = requests.post('https://api.snov.io/v1/oauth/access_token', data=params)
+        resText = res.text.encode('ascii','ignore')
+
+        return json.loads(resText)['access_token']
+
+
     '''
     ###################################
     # GET METHODS
@@ -39,6 +56,7 @@ class WebsiteAnalysis():
         df = self.df
 
         df["website"] = ""
+        df["emailsFound"] = ""
         df["monthlyOrganicClicks"] = ""
         df["monthlyPaidClicks"] = ""
         df["totalClicks"] = ""
@@ -49,6 +67,7 @@ class WebsiteAnalysis():
             #if the line is empty
             try:
                 if df.at[i, "name"]=="" or len(df.at[i, "name"])<5:
+                    print("Encountered an empty line. Skipping...")
                     continue
             except Exception as e:
                 print(e)
@@ -69,6 +88,14 @@ class WebsiteAnalysis():
             ratio = round(ratio, 2)
             df.at[i, "ratio"] = ratio
             df.at[i, "top5keywords"] = self.get_spyfu_keywords(website, top_n=5)
+
+            try:
+                df.at[i, "emailsFound"] = self.get_snov_emails(website)
+            except Exception as e:
+                print(e)
+                df.at[i, "emailsFound"] = 0
+                continue
+            print("Parsed the number of emails for " + name)
             print("#############################")
 
         self.df = df
@@ -100,6 +127,14 @@ class WebsiteAnalysis():
                 print("Found the website: " + item['link'])
                 return item['link']
 
+    def get_snov_emails(self, website):
+        params = {'access_token': self.snov_token,
+                  'domain': website,
+                  }
+        res = requests.post('https://api.snov.io/v1/get-domain-emails-count', data=params)
+
+        return json.loads(res.text)["result"]
+
     def get_dataframe(self):
         return self.df
 
@@ -115,10 +150,7 @@ class WebsiteAnalysis():
 
 
 if __name__ == "__main__":
-    df = pd.read_csv("../output/output.csv")
-    website_analysis = WebsiteAnalysis(df, "Seattle")
-    website_analysis.get_traffic_analysis()
-    website_analysis.save_dataframe()
+    pass
 
 
 
