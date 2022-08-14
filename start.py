@@ -17,31 +17,7 @@ class MainMenu:
 
         #SPYFU
         self.filename = None
-
-    def set_parser(self):
-        print("#############################################")
-        print("# Welcome to The Design Paradox App! #")
-        print("#############################################")
-
-        print("Choose a parser:")
-        print("1. Basic Google Maps Parser")
-        print("2. SpyFu Parser")
-        confirmed = False
-        while not confirmed:
-            choice = input("Enter your choice (1 or 2): ")
-
-            try:
-                choice = int(choice)
-                if choice == 1 or choice == 2:
-                    confirmed = True
-                    self.type = choice
-                else:
-                    print("Invalid choice")
-                    continue
-            except Exception as e:
-                print(e)
-                print("Try again!")
-                continue
+        self.replace = False
 
     '''
     ##############################################
@@ -56,15 +32,28 @@ class MainMenu:
 
         confirmed = False
         while not confirmed:
-            print("Enter the file you want to analyze:")
-            filename = input("Enter a filename: ")
-            if filename == "":
-                print("Invalid filename")
-                continue
-            if not filename.endswith(".csv"):
-                filename += ".csv"
 
-            self.filename = filename
+            if(self.filename is None):
+                print("Enter the file you want to analyze:")
+                filename = input("Enter a filename: ")
+                if filename == "":
+                    print("Invalid filename")
+                    continue
+                if not filename.endswith(".csv"):
+                    filename += ".csv"
+
+                self.filename = filename
+
+            print("Do you want to replace the existing file? (y/n)")
+            choice = input("Enter your choice (y/n): ")
+            if choice == "y":
+                self.replace = True
+            elif choice == "n":
+                self.replace = False
+            else:
+                print("Invalid choice")
+                continue
+
             confirmed = True
 
         self.location = self.filename.split(" — ")[1]
@@ -96,7 +85,7 @@ class MainMenu:
         while not integer:
             rating_min = input("Enter a rating minimum (integer): ")
             try:
-                rating_min = int(rating_limit)
+                rating_min = int(rating_min)
                 integer = True
             except Exception as e:
                 print(e)
@@ -190,6 +179,7 @@ class MainMenu:
         #name of the file is date — location — niche — rating limit — type
         filename = datetime.datetime.now().strftime("%Y-%m-%d") + " — " + self.location + " — " + self.niche + " — " \
                    + str(self.rating_limit) + " — " + self.type + ".csv"
+        self.filename = filename
         uploader.upload_file("output/output.csv", filename, "10rZTP5jXSyOCIllT_6hxqGTTVCvcWXy3")
 
     def run_spyfu_parser(self):
@@ -202,15 +192,49 @@ class MainMenu:
         parser.get_traffic_analysis()
         parser.save_dataframe("output_spyfu")
 
-        uploader.upload_file("output/output_spyfu.csv", self.filename, "10rZTP5jXSyOCIllT_6hxqGTTVCvcWXy3")
+        uploader.upload_file("output/output_spyfu.csv", self.filename, "10rZTP5jXSyOCIllT_6hxqGTTVCvcWXy3",
+                             replace=self.replace)
 
-#To-do:
-#1) Prompt replace
-#2) Replace current search with website_parse method
+    def run_parsers(self):
+        print("#############################################")
+        print("# Welcome to The Design Paradox App! #")
+        print("#############################################")
 
+        print("Choose a parser:")
+        print("1. Basic Google Maps Parser")
+        print("2. SpyFu Parser")
+        print("3. Both")
+        confirmed = False
+        while not confirmed:
+            choice = input("Enter your choice (1, 2, 3): ")
+
+            try:
+                choice = int(choice)
+                if choice == 1 or choice == 2 or choice == 3:
+                    confirmed = True
+                    self.type = choice
+                else:
+                    print("Invalid choice")
+                    continue
+            except Exception as e:
+                print(e)
+                print("Try again!")
+                continue
+
+    def run(self):
+        self.run_parsers()
+        if(self.type == 1):
+            self.run_maps_parser()
+        elif(self.type == 2):
+            self.run_spyfu_parser()
+        elif(self.type == 3):
+            self.run_maps_parser()
+            self.run_spyfu_parser()
+
+#2022-08-14 — Detroit, USA — boxing class — 150 — radius
 if __name__ == "__main__":
     menu = MainMenu()
-    menu.run_spyfu_parser()
+    menu.run()
 
 
 

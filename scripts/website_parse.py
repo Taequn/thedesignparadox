@@ -38,7 +38,7 @@ class WebsiteAnalysis():
         params = {
             'grant_type':'client_credentials',
             'client_id': self.snov_api,
-            'client_secret': self.snov_api
+            'client_secret': self.snov_secret,
         }
 
         res = requests.post('https://api.snov.io/v1/oauth/access_token', data=params)
@@ -84,7 +84,11 @@ class WebsiteAnalysis():
             df.at[i, "monthlyPaidClicks"] = int(data["monthlyPaidClicks"])
             df.at[i, "totalClicks"] = int(data["monthlyOrganicClicks"]) + int(data["monthlyPaidClicks"])
 
-            ratio = int(data["monthlyPaidClicks"])/int(data["monthlyOrganicClicks"])
+            try:
+                ratio = int(data["monthlyPaidClicks"])/int(data["monthlyOrganicClicks"])
+            except Exception as e:
+                ratio = 0
+
             ratio = round(ratio, 2)
             df.at[i, "ratio"] = ratio
             df.at[i, "top5keywords"] = self.get_spyfu_keywords(website, top_n=5)
@@ -119,7 +123,7 @@ class WebsiteAnalysis():
         return sorted_dictionary[:top_n]
 
     def get_website(self, name):
-        ignore = ["facebook.com", "instagram.com"]
+        ignore = ["facebook.com", "instagram.com", "linkedin.com"]
         query = name + " " + self.location + " website"
         res = self.__google_search(query, self.g_api, self.cse, num=3)
         for item in res['items']:

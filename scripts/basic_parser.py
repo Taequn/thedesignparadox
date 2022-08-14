@@ -6,6 +6,8 @@ import bs4 as bs
 import time
 from scrapingbee import ScrapingBeeClient
 import json
+from googleapiclient.discovery import build
+
 
 class BasicParser:
     def __init__(self, niche, location, rating_limit, rating_min):
@@ -26,6 +28,7 @@ class BasicParser:
             data = json.load(json_file)
             self.gmaps_api = data['g_api']
             self.scraping_bee_api = data['scrap_api']
+            self.cse = data['cse_api']
 
             self.scraper = ScrapingBeeClient(self.scraping_bee_api)
 
@@ -69,6 +72,19 @@ class BasicParser:
         time.sleep(sleep_time)
         return df
 
+    def __google_search(self, search_term, api_key, cse_id, **kwargs):
+        service = build("customsearch", "v1", developerKey=api_key)
+        res = service.cse().list(q=search_term, cx=cse_id, **kwargs).execute()
+        return res
+
+    def __google_fb(self, name):
+        query = name + " " + self.location + " facebook"
+        res = self.__google_search(query, self.gmaps_api, self.cse, num=3)
+
+        for item in res['items']:
+            if('facebook.com' in item['link']):
+                return item['link']
+        return None
 
     '''
     ###################################
@@ -163,43 +179,42 @@ class BasicParser:
         total_time = (int(self.scraper_wait_time)/1000)*len(df)
         for i in range(len(df)):
             name = df.iloc[i]['name']
-            print("TIME REMAINING: " + str(total_time - i*(int(self.scraper_wait_time)/1000)))
+            print("CURRENTLY DOING: " + name)
+            print("POSITION: " + str(i) + "/" + str(len(df)))
 
-            look_for = name + " " + self.location + " facebook"
-            print(name + " (" + str(i) + "/" + str(len(df)) + ")")
+            fb_link = self.__google_fb(name)
+            df.at[i, 'Facebook'] = fb_link
 
-            for j in search(look_for, tld="com", num=3, stop=3):
-                if("facebook.com" in j):
-                    link = j
-                    print("Found FB page: " + link)
-                    df.at[i, 'Facebook'] = link
-                    id = self.get_facebook_id(link)
-                    df.at[i, 'Facebook ID'] = id
 
-                    if(id is not None):
-                        print("Found FB ID: " + id)
-                        print("Analyzing Ads Library. It may take some time.")
-                        ads_library_url = "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=ALL&view_all_page_id=" + id + "&sort_data[direction]=desc&sort_data[mode]=relevancy_monthly_grouped&search_type=page&media_type=all"
-                        ads_running = self.get_ads(ads_library_url)
-                        try:
-                            print("Found " + str(len(ads_running)) + " ads running")
-                        except Exception as e:
-                            print("Did not find any ads running")
-                            ads_running = "ERROR"
+            id = self.get_facebook_id(fb_link)
+            df.at[i, 'Facebook ID'] = id
 
-                    else:
-                        print("Did not find FB ID")
-                        ads_library_url = None
-                        ads_running = None
-                    df.at[i, 'Facebook Ads Library'] = ads_library_url
-                    df.at[i, 'Ads'] = ads_running
-                    print("\n")
-                    break
+            if(id is not None):
+                print("Found FB ID: " + id)
+                print("Analyzing Ads Library. It may take some time.")
+                ads_library_url = "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=ALL&view_all_page_id=" + id + "&sort_data[direction]=desc&sort_data[mode]=relevancy_monthly_grouped&search_type=page&media_type=all"
+                ads_running = self.get_ads(ads_library_url)
+                try:
+                    print("Found " + str(len(ads_running)) + " ads running")
+                except Exception as e:
+                    print("Did not find any ads running")
+                    ads_running = "ERROR"
+            else:
+                print("Did not find FB ID")
+                ads_library_url = None
+                ads_running = None
+
+            df.at[i, 'Facebook Ads Library'] = ads_library_url
+            df.at[i, 'Ads'] = ads_running
+            print("\n")
 
         df = df[df['Facebook'] != ""]
         self.df = df
 
     def get_facebook_id(self, link):
+        if link is None:
+            return None
+
         page = requests.get(link)
         soup = bs.BeautifulSoup(page.content, 'html.parser')
         for i in soup.find_all('script'):
