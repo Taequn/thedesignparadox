@@ -2,7 +2,6 @@ from scripts.basic_parser import BasicParser
 from scripts.drive_upload import GoogleDriveUploader
 from scripts.website_parse import WebsiteAnalysis
 import datetime
-import pandas as pd
 
 class MainMenu:
     def __init__(self):
@@ -11,8 +10,7 @@ class MainMenu:
         self.rating_limit = None
         self.rating_min = None
         self.radius = None
-        self.type = None
-        self.type = -1
+        self.choice = -1
 
 
         #SPYFU
@@ -44,15 +42,19 @@ class MainMenu:
 
                 self.filename = filename
 
-            print("Do you want to replace the existing file? (y/n)")
-            choice = input("Enter your choice (y/n): ")
-            if choice == "y":
-                self.replace = True
-            elif choice == "n":
-                self.replace = False
+
+            if(self.choice != 3): #if they are not doing both
+                print("Do you want to replace the existing file? (y/n)")
+                choice = input("Enter your choice (y/n): ")
+                if choice == "y":
+                    self.replace = True
+                elif choice == "n":
+                    self.replace = False
+                else:
+                    print("Invalid choice")
+                    continue
             else:
-                print("Invalid choice")
-                continue
+                self.replace = True
 
             confirmed = True
 
@@ -97,31 +99,14 @@ class MainMenu:
         self.rating_limit = rating_limit
         self.rating_min = rating_min
 
-    def set_type(self):
-        confirmed = False
-        while not confirmed:
-            print("Enter the type of search you want to do:")
-            print("1. Wider search with no radius limit")
-            print("2. Search with radius limit")
-            choice = input("Enter your choice (1 or 2): ")
-            if choice == "1":
-                self.type = "wide"
-                confirmed = True
-            elif choice == "2":
-                self.type = "radius"
-                confirmed = True
-                self.__set_radius()
-            else:
-                print("Invalid choice")
-                continue
-
     def __set_radius(self):
         confirmed = False
         while not confirmed:
             print("Enter the radius you want to search for:")
-            radius = input("Enter a radius (m): ")
+            radius = input("Enter a radius (km): ")
             try:
-                self.radius = int(radius)
+                radius = int(radius)
+                self.radius = radius * 1000
                 confirmed = True
             except Exception as e:
                 print(e)
@@ -135,18 +120,14 @@ class MainMenu:
         confirmed = False
         while not confirmed:
             self.set_search()
-            self.set_type()
+            self.__set_radius()
 
             print("\n#############################################")
             print("Niche: " + self.niche)
             print("Location: " + self.location)
             print("Rating limit: " + str(self.rating_limit))
             print("Rating minimum: " + str(self.rating_min))
-            if self.type == "wide":
-                print("Type: Wider search with no radius limit")
-            elif self.type == "radius":
-                print("Type: Search with radius limit")
-                print("Radius: " + str(self.radius))
+            print("Radius: " + str(self.radius))
             print("#############################################\n")
             choice = input("Is this correct? (y/n): ")
             if choice == "y":
@@ -166,19 +147,14 @@ class MainMenu:
     '''
     def run_maps_parser(self):
         self.set_variables()
-        parser = BasicParser(self.niche, self.location, self.rating_limit, self.rating_min)
-        if self.type == "wide":
-            parser.get_places()
-        else:
-            parser.get_places_nearby(self.radius)
-
-        parser.get_facebook_page()
+        parser = BasicParser(self.niche, self.location, self.rating_limit, self.rating_min, self.radius)
+        parser.run()
         parser.save_dataframe("output/output.csv")
         print("Dataframe saved to output/output.csv")
         uploader = GoogleDriveUploader()
         #name of the file is date — location — niche — rating limit — type
         filename = datetime.datetime.now().strftime("%Y-%m-%d") + " — " + self.location + " — " + self.niche + " — " \
-                   + str(self.rating_limit) + " — " + self.type + ".csv"
+                   + str(self.rating_limit) + " — " + str(self.radius) + ".csv"
         self.filename = filename
         uploader.upload_file("output/output.csv", filename, "10rZTP5jXSyOCIllT_6hxqGTTVCvcWXy3")
 
@@ -212,7 +188,7 @@ class MainMenu:
                 choice = int(choice)
                 if choice == 1 or choice == 2 or choice == 3:
                     confirmed = True
-                    self.type = choice
+                    self.choice = choice
                 else:
                     print("Invalid choice")
                     continue
@@ -223,18 +199,28 @@ class MainMenu:
 
     def run(self):
         self.run_parsers()
-        if(self.type == 1):
+        if(self.choice == 1):
             self.run_maps_parser()
-        elif(self.type == 2):
+        elif(self.choice == 2):
             self.run_spyfu_parser()
-        elif(self.type == 3):
+        elif(self.choice == 3):
             self.run_maps_parser()
             self.run_spyfu_parser()
 
-#2022-08-14 — Detroit, USA — boxing class — 150 — radius
+#Todo:
+# — Implement Google Sheets API to upload data to Google Sheets
+# - Change the way save and open works (inconsistency between output included and excluded)
 if __name__ == "__main__":
-    menu = MainMenu()
-    menu.run()
+    parser = MainMenu()
+    parser.run()
+
+
+
+
+
+
+
+
 
 
 
