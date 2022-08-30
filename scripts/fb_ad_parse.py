@@ -10,7 +10,7 @@ class BeeScrapper():
 
         self.scraper_wait_time = "6000"
         self.scraper_termination_time = 20
-        with open('../config/api_keys.json') as json_file:
+        with open('config/api_keys.json') as json_file:
             data = json.load(json_file)
             self.scraping_bee_api = data['scrap_api']
             self.scraper = ScrapingBeeClient(self.scraping_bee_api)
@@ -24,7 +24,7 @@ class BeeScrapper():
         if not filename.endswith('.csv'):
             filename += '.csv'
 
-        path = '../output/' + filename
+        path = 'output/' + filename
         read_in = pd.read_csv(path)
         #check if read_in has "Facebook Ads Library" in the column name
         if "Facebook Ads Library" in read_in.columns:

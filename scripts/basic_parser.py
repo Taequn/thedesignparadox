@@ -29,7 +29,7 @@ class BasicParser:
         self.radius = int(radius)
 
         #### API KEYS ####
-        with open('../config/api_keys.json') as json_file:
+        with open('config/api_keys.json') as json_file:
             data = json.load(json_file)
             self.gmaps_api = data['g_api']
             self.scraping_bee_api = data['scrap_api']
@@ -94,6 +94,7 @@ class BasicParser:
     def __google_search(self, search_term, api_key, cse_id, **kwargs):
         service = build("customsearch", "v1", developerKey=api_key)
         res = service.cse().list(q=search_term, cx=cse_id, **kwargs).execute()
+        time.sleep(self.sleep_time/2)
         return res
 
     def __google_platform(self, name, platform):

@@ -1,10 +1,14 @@
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
+from oauth2client.service_account import ServiceAccountCredentials
 
 class GoogleDriveUploader:
     def __init__(self):
         self.settings_path = "config/settings.yaml"
-        self.gauth = GoogleAuth(settings_file=self.settings_path)
+        #self.gauth = GoogleAuth(settings_file=self.settings_path)
+        self.gauth = GoogleAuth()
+        scope = ["https://www.googleapis.com/auth/drive"]
+        self.gauth.credentials = ServiceAccountCredentials.from_json_keyfile_name("config/creds.json", scope)
         self.drive = GoogleDrive(self.gauth)
 
     def upload_file(self, file_to_upload, file_name, folder, replace=False):
@@ -49,7 +53,8 @@ class GoogleDriveUploader:
         print('Deleted: ' + file_name)
 
 if __name__ == "__main__":
-    pass
+    upload = GoogleDriveUploader()
+    upload.upload_file("output/output.csv", "output.csv", "10rZTP5jXSyOCIllT_6hxqGTTVCvcWXy3", replace=True)
 
 
 

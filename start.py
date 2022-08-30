@@ -2,6 +2,8 @@ from scripts.basic_parser import BasicParser
 from scripts.drive_upload import GoogleDriveUploader
 from scripts.website_parse import WebsiteAnalysis
 import datetime
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 class MainMenu:
     def __init__(self):
@@ -213,70 +215,3 @@ class MainMenu:
 if __name__ == "__main__":
     parser = MainMenu()
     parser.run()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

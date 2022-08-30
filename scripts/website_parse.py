@@ -7,10 +7,10 @@ class WebsiteAnalysis():
     def __init__(self, filename, location):
         self.df = self.__read_pd(filename)
         self.location = location
-        self.wait_time = 2
+        self.wait_time = 0.5
         self.upper_click_range = 80000
 
-        with open('../config/api_keys.json') as json_file:
+        with open('config/api_keys.json') as json_file:
             data = json.load(json_file)
             self.api = data['spyfu_api']
             self.key = data['spyfu_key']
@@ -27,7 +27,7 @@ class WebsiteAnalysis():
     ###################################
     '''
     def __read_pd(self, filename):
-        path = '../output/' + filename
+        path = 'output/' + filename
         return pd.read_csv(path)
 
     def __snov_auth(self):
@@ -143,7 +143,7 @@ class WebsiteAnalysis():
     '''
 
     def save_dataframe(self, filename):
-        path = '../output/' + filename + '.csv'
+        path = 'output/' + filename + '.csv'
         self.df.to_csv(path, index=False)
 
 
