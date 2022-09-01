@@ -140,15 +140,23 @@ class MainMenu:
             else:
                 print("Invalid choice. Starting over...")
                 continue
-
+    
+    def set_variables_manually(self, niche, location, max, min, radius, choice):
+        self.niche = niche
+        self.location = location
+        self.rating_limit = max
+        self.rating_min = min
+        self.radius = radius
+        self.choice = choice
 
     '''
     ##############################################
     # RUN FUNCTIONS #
     ##############################################
     '''
-    def run_maps_parser(self):
-        self.set_variables()
+    def run_maps_parser(self, auto=True):
+        if(auto):
+            self.set_variables()
         parser = BasicParser(self.niche, self.location, self.rating_limit, self.rating_min, self.radius)
         parser.run()
         parser.save_dataframe("output/output.csv")
@@ -199,19 +207,33 @@ class MainMenu:
                 print("Try again!")
                 continue
 
-    def run(self):
-        self.run_parsers()
+
+    def run(self, auto=True):
+        if auto:
+            self.run_parsers()
         if(self.choice == 1):
-            self.run_maps_parser()
+            self.run_maps_parser(auto)
         elif(self.choice == 2):
             self.run_spyfu_parser()
         elif(self.choice == 3):
-            self.run_maps_parser()
+            self.run_maps_parser(auto)
             self.run_spyfu_parser()
 
 #Todo:
 # — Implement Google Sheets API to upload data to Google Sheets
 # - Change the way save and open works (inconsistency between output included and excluded)
 if __name__ == "__main__":
+    list_of_niches = ['Wellness center', 'Hair salon', 'SPA', 'Nail salon',
+    'Sport clothes', 'Yoga clothes', 'Home accessories', 'Furniture',
+    'Pet food', 'Fishing store', 'hunting store', 'Cosmetics',
+    'Grooming', 'Camping', 'Gym', 'Cooking classes', 'Yoga classes',
+    'HIIT classes', 'Music classes', 'Art classes', 'Pilates classes',
+    'Weight loss', 'Art and craft shop', 'CBD shop', 'Essential oils shop',
+    'Food supplements', 'Dance classes', 'Barber shop', 'Martial arts classes',
+    'Wedding salon']
+
+    locations = "Bronx, NYC, USA; Brooklyn, NYC, USA; Manhattan, NYC, USA; Queens, NYC, USA; Staten Island, NYC, USA"
     parser = MainMenu()
-    parser.run()
+    for niche in list_of_niches:
+        parser.set_variables_manually(niche, locations, 5000, 20, 40000, 3)
+        parser.run(auto=False)

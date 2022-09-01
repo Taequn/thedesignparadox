@@ -72,10 +72,9 @@ class BasicParser:
             except KeyError:
                 continue
 
-            print("GMAPS PARSER: Parsing place " + str(len(df)) + " of " + str(len(results['results'])))
+            print("GMAPS PARSER " + self.niche + ": Parsing place " + str(len(df)) + " of " + str(len(results['results'])))
             place_id = place['place_id']
             website = self.__get_website(place_id)
-            monthly_traffic = self.__get_traffic(website)
             time.sleep(self.sleep_time)
 
             # socials = self.__get_socials_from_website(website)
@@ -86,8 +85,7 @@ class BasicParser:
                             'rating': place['rating'],
                             'user_ratings_total': place['user_ratings_total'],
                             'ID': place['place_id'],
-                            'website': website,
-                            'monthly_traffic': monthly_traffic}, ignore_index=True)
+                            'website': website}, ignore_index=True)
 
         return df
 
@@ -229,10 +227,15 @@ class BasicParser:
 
         while "next_page_token" in parsed_places:
             print(loc+": Starting the next page")
-            parsed_places = self.gmaps.places(page_token=parsed_places["next_page_token"])
-            df = df.append(self.__parse_places_results(parsed_places))
-            print(loc+": Finished the next page")
-            self.pages += 1
+            try:
+                parsed_places = self.gmaps.places(page_token=parsed_places["next_page_token"])
+                df = df.append(self.__parse_places_results(parsed_places))
+                print(loc+": Finished the next page")
+                self.pages += 1
+            except Exception as e:
+                print(e)
+                print(loc+": Failed to get the next page")
+                break
 
         print("Found " + str(len(df)) + " places at " + loc)
         if(len(df) == 0):
@@ -255,6 +258,7 @@ class BasicParser:
         print("Beginning parsing facebook pages")
 
         #Init columns
+        df['Monthly traffic'] = ""
         df['Facebook'] = ""
         df['Instagram']= ""
         df['Facebook ID'] = ""
@@ -269,6 +273,7 @@ class BasicParser:
             print("POSITION: " + str(i) + "/" + str(len(df)))
 
             fb_link = self.__google_platform(website, "facebook")
+            df.at[i, 'Monthly traffic'] = self.__get_traffic(website)
             df.at[i, 'Facebook'] = fb_link
             df.at[i, 'Instagram'] = self.__google_platform(website, "instagram")
             df.at[i, 'Facebook Likes'] = self.__get_facebook_likes(fb_link)
@@ -291,7 +296,6 @@ class BasicParser:
         df = df.drop_duplicates(subset=['Facebook'])
         df = df.reset_index(drop=True)
         self.df = df
-
     '''
     ###################################
     SAVE FUNCTIONS
